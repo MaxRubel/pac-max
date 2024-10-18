@@ -2,9 +2,10 @@
   import { onDestroy, onMount } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
   import { gameBoard } from "../gameboard";
+  import { updateBaddiesMap } from "./GameStore";
 
-  export let id: Date;
-  console.log("created ", id);
+  export let id: string;
+
   let ctx: CanvasRenderingContext2D;
   let intervalId: number | null;
   let direction = "up";
@@ -14,6 +15,8 @@
   let oldMovement = "up";
   let count = 0;
   let canTransition = true;
+
+  const SPEED = 240;
 
   function goRandomDirection() {
     const possibilities = [];
@@ -30,8 +33,8 @@
       possibilities.push("left");
     }
 
+    // If no valid moves, allow doubling back
     if (possibilities.length === 0) {
-      // If no valid moves, allow doubling back
       if (!gameBoard[x][y + 1]) possibilities.push("up");
       if (!gameBoard[x][y - 1]) possibilities.push("down");
       if (!gameBoard[x + 1][y]) possibilities.push("right");
@@ -161,7 +164,7 @@
 
     intervalId = setInterval(() => {
       handleMovement();
-    }, 300);
+    }, SPEED);
 
     if (flipCoin()) {
       x = 14;
@@ -175,11 +178,19 @@
   onDestroy(() => {
     if (intervalId) clearInterval(intervalId);
   });
+
+  $: {
+    if (x && y) {
+      updateBaddiesMap({ id, x, y });
+    }
+  }
 </script>
 
 <div
   class="baddy"
-  style="bottom:{y * CELL_SIZE}px ; left: {x * CELL_SIZE}px"
+  style="
+  bottom:{y * CELL_SIZE}px; 
+  left: {x * CELL_SIZE}px"
   class:canTransition
 >
   👻
