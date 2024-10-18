@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gameBoard } from "../gameboard";
-  import { game_is_running } from "./GameStore";
-  import BadGuy from "./BadGuy.svelte";
+  import { baddiesMapStore, game_is_running } from "./GameStore";
   import { CELL_SIZE } from "../ConfigSettings";
+  import BadGuyComponent from "./BadGuyComponent.svelte";
+  import uniqid from "uniqid";
+  import { updateBaddiesMap } from "./GameStore";
+  import GoodGuyComponent from "./GoodGuyComponent.svelte";
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
-  let baddies: Date[] = [];
-
-  const SPEED = 0.15;
 
   function renderLevelMap() {
     if (!ctx) return;
@@ -40,46 +40,57 @@
   onMount(() => {
     canvas.width = gameBoard.length * CELL_SIZE;
     canvas.height = gameBoard[0].length * CELL_SIZE;
-    ctx = canvas.getContext("2d");
 
+    ctx = canvas.getContext("2d");
     if (!ctx) return;
+
     ctx.save();
     ctx.translate(0, canvas.height);
-    ctx.scale(1, -1);
+    ctx.scale(1, -1); //<--- flip canvas upside down
     renderLevelMap();
   });
 
   function startGame() {
     game_is_running.set(true);
-    baddies = [...baddies, new Date()];
+    const newId = uniqid();
+
+    updateBaddiesMap({
+      id: newId,
+      x: 0, //values will be overwritten when baddy component mounts
+      y: 0,
+    });
   }
 
   function stopGame() {
     game_is_running.set(false);
     console.log("game over");
-    baddies = [];
+    baddiesMapStore.set({});
   }
-
-  // $: {
-  //   console.log($game_is_running);
-  // }
 </script>
 
 <main>
+  <!-- prettier-ignore -->
   <div class="game-container">
+
+
+    <!-- ---debugging container--- -->
     <div class="top-button-row">
-      <button on:click={startGame}>Add Bad Guy</button>
-      <button on:click={stopGame}>Stop Game</button>
+      <button on:click={startGame}> Add Enemy </button>
+      <button on:click={stopGame}> Clear </button>
+
       <div class="stats">
         <div>running: {$game_is_running}</div>
-        <div>baddies: {baddies.length}</div>
+        <div>baddies: {Object.values($baddiesMapStore).length}</div>
       </div>
     </div>
+
+    <!-- ---game canvas--- -->
     <div class="game-map-container">
       <canvas id="levelMap" class="level-map" bind:this={canvas}> </canvas>
-      {#each baddies as id (id)}
-        <BadGuy {id} />
+      {#each Object.values($baddiesMapStore) as baddy (baddy.id)}
+        <BadGuyComponent id={baddy.id} />
       {/each}
+      <GoodGuyComponent/>
     </div>
   </div>
 </main>
