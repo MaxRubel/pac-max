@@ -1,15 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { gameBoard } from "../gameboard";
+  import { gameBoard, initGameBoard } from "../gameboard";
   import { baddiesMapStore, game_is_running } from "./GameStore";
   import { CELL_SIZE } from "../ConfigSettings";
   import BadGuyComponent from "./BadGuyComponent.svelte";
   import uniqid from "uniqid";
   import { updateBaddiesMap } from "./GameStore";
   import GoodGuyComponent from "./GoodGuyComponent.svelte";
+  import type { GameBoard } from "../gameboard";
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
+  let initializedGameBoard: GameBoard | null = null;
 
   function renderLevelMap() {
     if (!ctx) return;
@@ -48,6 +50,7 @@
     ctx.translate(0, canvas.height);
     ctx.scale(1, -1); //<--- flip canvas upside down
     renderLevelMap();
+    initializedGameBoard = initGameBoard();
   });
 
   function startGame() {
@@ -87,9 +90,11 @@
     <!-- ---game canvas--- -->
     <div class="game-map-container">
       <canvas id="levelMap" class="level-map" bind:this={canvas}> </canvas>
-      {#each Object.values($baddiesMapStore) as baddy (baddy.id)}
-        <BadGuyComponent id={baddy.id} />
-      {/each}
+      {#if initializedGameBoard}
+        {#each Object.values($baddiesMapStore) as baddy (baddy.id)}
+          <BadGuyComponent id={baddy.id} gameBoard={initializedGameBoard}/>
+        {/each}
+      {/if}
       <GoodGuyComponent/>
     </div>
   </div>
