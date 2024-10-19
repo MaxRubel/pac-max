@@ -29,3 +29,22 @@ export const gameBoard = [
   [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
+
+type CellPosition = {
+  barrier: boolean;
+  coin: boolean;
+};
+
+type GameBoardRow = CellPosition[];
+export type GameBoard = GameBoardRow[];
+
+export function initGameBoard(): GameBoard {
+  const initializedBoard: GameBoard = gameBoard.map(row =>
+    row.map(pos => ({
+      barrier: pos === 1,
+      coin: pos === 0,
+    }))
+  );
+
+  return initializedBoard;
+}

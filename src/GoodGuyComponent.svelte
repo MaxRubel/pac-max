@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
   import { gameBoard } from "../gameboard";
+  import { baddiesMapStore } from "./GameStore";
 
   let x = 13;
   let y = 7;

@@ -1,17 +1,18 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
-  import { gameBoard } from "../gameboard";
+
   import { updateBaddiesMap } from "./GameStore";
+  import type { GameBoard } from "../gameboard";
 
   export let id: string;
+  export let gameBoard: GameBoard;
 
   let ctx: CanvasRenderingContext2D;
   let intervalId: number | null;
   let direction = "up";
   let x = 14;
   let y = 19;
-
   let oldMovement = "up";
   let count = 0;
   let canTransition = true;
@@ -20,25 +21,25 @@
 
   function goRandomDirection() {
     const possibilities = [];
-    if (!gameBoard[x][y + 1] && oldMovement !== "down") {
+    if (!gameBoard[x][y + 1].barrier && oldMovement !== "down") {
       possibilities.push("up");
     }
-    if (!gameBoard[x][y - 1] && oldMovement !== "up") {
+    if (!gameBoard[x][y - 1].barrier && oldMovement !== "up") {
       possibilities.push("down");
     }
-    if (!gameBoard[x + 1][y] && oldMovement !== "left") {
+    if (!gameBoard[x + 1][y].barrier && oldMovement !== "left") {
       possibilities.push("right");
     }
-    if (!gameBoard[x - 1][y] && oldMovement !== "right") {
+    if (!gameBoard[x - 1][y].barrier && oldMovement !== "right") {
       possibilities.push("left");
     }
 
     // If no valid moves, allow doubling back
     if (possibilities.length === 0) {
-      if (!gameBoard[x][y + 1]) possibilities.push("up");
-      if (!gameBoard[x][y - 1]) possibilities.push("down");
-      if (!gameBoard[x + 1][y]) possibilities.push("right");
-      if (!gameBoard[x - 1][y]) possibilities.push("left");
+      if (!gameBoard[x][y + 1].barrier) possibilities.push("up");
+      if (!gameBoard[x][y - 1].barrier) possibilities.push("down");
+      if (!gameBoard[x + 1][y].barrier) possibilities.push("right");
+      if (!gameBoard[x - 1][y].barrier) possibilities.push("left");
     }
 
     if (possibilities.length > 0) {
@@ -57,19 +58,19 @@
   }
 
   function possibleHorizontalTurn() {
-    if (flipCoin() && !gameBoard[x - 1][y]) {
+    if (flipCoin() && !gameBoard[x - 1][y].barrier) {
       direction = "left";
     }
-    if (flipCoin() && !gameBoard[x + 1][y]) {
+    if (flipCoin() && !gameBoard[x + 1][y].barrier) {
       direction = "right";
     }
   }
 
   function possibleVerticalTurn() {
-    if (flipCoin() && !gameBoard[x][y + 1]) {
+    if (flipCoin() && !gameBoard[x][y + 1].barrier) {
       direction = "up";
     }
-    if (flipCoin() && !gameBoard[x][y - 1]) {
+    if (flipCoin() && !gameBoard[x][y - 1].barrier) {
       direction = "down";
     }
   }
@@ -77,14 +78,14 @@
   function checkNextMove() {
     switch (direction) {
       case "up":
-        if (gameBoard[x][y + 1]) {
+        if (gameBoard[x][y + 1].barrier) {
           direction = "stopped";
         }
         possibleHorizontalTurn();
         break;
 
       case "down":
-        if (gameBoard[x][y - 1]) {
+        if (gameBoard[x][y - 1].barrier) {
           direction = "stopped";
         }
         possibleHorizontalTurn();
@@ -99,7 +100,7 @@
           }, 50);
           return;
         }
-        if (gameBoard[x - 1][y]) {
+        if (gameBoard[x - 1][y].barrier) {
           direction = "stopped";
         }
         possibleVerticalTurn();
@@ -114,7 +115,7 @@
           }, 50);
           return;
         }
-        if (gameBoard[x + 1][y]) {
+        if (gameBoard[x + 1][y].barrier) {
           direction = "stopped";
         }
         possibleVerticalTurn();
