@@ -16,3 +16,11 @@ export function updateBaddiesMap(baddyObj: BaddyType) {
     [baddyObj.id]: baddyObj,
   }));
 }
+
+export function deleteBaddy(id: string) {
+  baddiesMapStore.update((prevMap) => {
+    const newMap = { ...prevMap }
+    delete newMap[id]
+    return newMap
+  })
+}

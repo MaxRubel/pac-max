@@ -94,8 +94,8 @@
         {#each Object.values($baddiesMapStore) as baddy (baddy.id)}
           <BadGuyComponent id={baddy.id} gameBoard={initializedGameBoard}/>
         {/each}
+        <GoodGuyComponent gameBoard={initializedGameBoard}/>
       {/if}
-      <GoodGuyComponent/>
     </div>
   </div>
 </main>

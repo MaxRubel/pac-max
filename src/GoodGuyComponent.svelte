@@ -1,14 +1,17 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
-  import { gameBoard } from "../gameboard";
-  import { baddiesMapStore } from "./GameStore";
+  import type { GameBoard } from "../gameboard";
+  import { baddiesMapStore, deleteBaddy } from "./GameStore";
+  import { get } from "svelte/store";
 
   let x = 13;
   let y = 7;
   let direction: string | null;
   let canTransition = true;
   const SPEED = 240;
+
+  export let gameBoard: GameBoard;
 
   function handleKeydown(e: KeyboardEvent) {
     e.preventDefault();
@@ -108,16 +111,16 @@
     }
 
     try {
-      if (keyPress === "ArrowUp" && gameBoard[x][y + 1]) {
+      if (keyPress === "ArrowUp" && gameBoard[x][y + 1].barrier) {
         return true;
       }
-      if (keyPress === "ArrowDown" && gameBoard[x][y - 1]) {
+      if (keyPress === "ArrowDown" && gameBoard[x][y - 1].barrier) {
         return true;
       }
-      if (keyPress === "ArrowLeft" && gameBoard[x - 1][y]) {
+      if (keyPress === "ArrowLeft" && gameBoard[x - 1][y].barrier) {
         return true;
       }
-      if (keyPress === "ArrowRight" && gameBoard[x + 1][y]) {
+      if (keyPress === "ArrowRight" && gameBoard[x + 1][y].barrier) {
         return true;
       }
     } catch (err) {
@@ -125,7 +128,7 @@
     }
   }
 
-  function checkForCollision(x: number, y: number): boolean {
+  function checkForBarrierCollision(x: number, y: number): boolean {
     //stops the character from moving if it hits a wall
 
     //early return if crossing other side of the board:
@@ -133,25 +136,25 @@
       return false;
     }
 
-    if (direction === "right" && gameBoard[x + 1][y]) {
+    if (direction === "right" && gameBoard[x + 1][y].barrier) {
       if (moving) clearInterval(moving);
       direction = null;
       return true;
     }
 
-    if (direction === "left" && gameBoard[x - 1][y]) {
+    if (direction === "left" && gameBoard[x - 1][y].barrier) {
       if (moving) clearInterval(moving);
       direction = null;
       return true;
     }
 
-    if (direction === "up" && gameBoard[x][y + 1]) {
+    if (direction === "up" && gameBoard[x][y + 1].barrier) {
       if (moving) clearInterval(moving);
       direction = null;
       return true;
     }
 
-    if (direction === "down" && gameBoard[x][y - 1]) {
+    if (direction === "down" && gameBoard[x][y - 1].barrier) {
       if (moving) clearInterval(moving);
       direction = null;
       return true;
@@ -160,7 +163,17 @@
     return false;
   }
 
-  $: checkForCollision(x, y);
+  function checkForBaddyCollision(x: number, y: number) {
+    const baddiesMap = get(baddiesMapStore);
+    Object.entries(baddiesMap).forEach(([id, baddyObj]) => {
+      if (baddyObj.x === x && baddyObj.y === y) {
+        deleteBaddy(id);
+      }
+    });
+  }
+
+  $: checkForBarrierCollision(x, y);
+  $: checkForBaddyCollision(x, y);
 
   window.addEventListener("keydown", handleKeydown);
 
