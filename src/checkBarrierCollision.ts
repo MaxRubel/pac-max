@@ -1,7 +1,6 @@
 import { gameBoard } from "../gameboard"
 
 export function checkForBarrierCollision(x: number, y: number, direction: string | null): boolean {
-  console.log("checking", { x, y })
   //stops the character from moving if it hits a wall
   if (!direction) return true
   //early return if crossing other side of the board:

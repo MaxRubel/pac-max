@@ -12,7 +12,7 @@
   let x = 13;
   let y = 7;
   let movementInt: number | null;
-  const SPEED = 100;
+  const SPEED = 150;
   let direction: string | null = null;
 
   function moveUp() {
@@ -143,6 +143,6 @@
 
 <style>
   .canTransition {
-    transition: 0.2s all ease;
+    transition: 0.4s all ease;
   }
 </style>
