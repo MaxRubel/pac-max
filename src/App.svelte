@@ -16,7 +16,6 @@
   import BadGuyComponent from "./BadGuyComponent.svelte";
   import uniqid from "uniqid";
   import { updateBaddiesMap } from "./GameStore";
-  import GoodGuyComponent from "./GoodGuyComponent.svelte";
   import type { GameBoard } from "../gameboard";
   import { flipCoin } from "./utils/flipCoin";
   import GoodGuy2 from "./GoodGuy2.svelte";
@@ -31,15 +30,22 @@
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const board = initializedGameBoard;
+    if (!board) {
+      console.error("game board never initialized properly");
+      return;
+    }
 
-    for (let x = 0; x < gameBoard.length; x++) {
-      for (let y = 0; y < gameBoard[x].length; y++) {
-        const barrier = gameBoard[x][y];
+    for (let x = 0; x < board.length; x++) {
+      for (let y = 0; y < board[x].length; y++) {
+        const barrier = board[x][y].barrier;
+        const coin = board[x][y].coin;
+
         if (x >= 11 && x <= 16 && y >= 15 && y <= 17) {
           continue; // Skip drawing for points within the bullpen
         }
         if ((x === 13 || x === 14) && y === 18) {
-          continue;
+          continue; // Skip drawing where the bullpen opens up
         }
         if (barrier) {
           ctx.beginPath();
@@ -48,6 +54,9 @@
           ctx.fill();
           ctx.strokeStyle = "rgb(162, 112, 255)";
           ctx.stroke();
+        }
+        if (coin) {
+          //TODO: render little coins
         }
       }
     }
