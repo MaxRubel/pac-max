@@ -2,16 +2,18 @@
   import { onDestroy } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
   import type { GameBoard } from "../gameboard";
-  import { baddiesMapStore, deleteBaddy } from "./GameStore";
+  import { baddiesMapStore, deleteBaddy, mainIntervalStore } from "./GameStore";
   import { get } from "svelte/store";
+
+  export let gameBoard: GameBoard;
 
   let x = 13;
   let y = 7;
   let direction: string | null;
   let canTransition = true;
+  let subMovement: number | null;
   const SPEED = 240;
-
-  export let gameBoard: GameBoard;
+  const MOVEMENT = 20;
 
   function handleKeydown(e: KeyboardEvent) {
     e.preventDefault();
@@ -40,6 +42,7 @@
 
   function goLeft() {
     if (moving) clearInterval(moving);
+    if (subMovement) clearInterval(subMovement);
     x = x - 1;
     moving = setInterval(() => {
       if (x === 0) {
@@ -54,6 +57,7 @@
 
   function goRight() {
     if (moving) clearInterval(moving);
+    if (subMovement) clearInterval(subMovement);
     x = x + 1;
     moving = setInterval(() => {
       if (x === 27) {
@@ -62,12 +66,14 @@
       } else {
         canTransition = true;
       }
+
       x = x + 1;
     }, SPEED);
   }
 
   function goUp() {
     if (moving) clearInterval(moving);
+    if (subMovement) clearInterval(subMovement);
     y = y + 1;
     moving = setInterval(() => {
       y = y + 1;
@@ -76,6 +82,7 @@
 
   function goDown() {
     if (moving) clearInterval(moving);
+    if (subMovement) clearInterval(subMovement);
     y = y - 1;
     moving = setInterval(() => {
       y = y - 1;
@@ -173,7 +180,14 @@
   }
 
   $: checkForBarrierCollision(x, y);
-  $: checkForBaddyCollision(x, y);
+
+  $: {
+    if ($mainIntervalStore) {
+      checkForBaddyCollision(x, y);
+    }
+  }
+
+  // $: checkForBaddyCollision(x, y);
 
   window.addEventListener("keydown", handleKeydown);
 
