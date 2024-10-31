@@ -2,22 +2,19 @@
   import { onDestroy, onMount } from "svelte";
   import { CELL_SIZE } from "../ConfigSettings";
 
-  import { updateBaddiesMap } from "./GameStore";
+  import { badGuyInterValStore, updateBaddiesMap } from "./GameStore";
   import type { GameBoard } from "../gameboard";
 
   export let id: string;
   export let gameBoard: GameBoard;
 
   let ctx: CanvasRenderingContext2D;
-  let intervalId: number | null;
   let direction = "up";
   let x = 14;
-  let y = 19;
+  let y = 18;
   let oldMovement = "up";
   let count = 0;
   let canTransition = true;
-
-  const SPEED = 240;
 
   function goRandomDirection() {
     const possibilities = [];
@@ -135,7 +132,7 @@
     }
   }
 
-  function handleMovement() {
+  $: if ($badGuyInterValStore) {
     switch (direction) {
       case "stopped":
         goRandomDirection();
@@ -157,34 +154,15 @@
         checkNextMove();
         break;
     }
+    updateBaddiesMap({ id, x, y }); //send position to global hashmap
   }
 
   onMount(() => {
     const canvas = document.getElementById("levelMap") as HTMLCanvasElement;
     ctx = canvas.getContext("2d")!;
 
-    intervalId = setInterval(() => {
-      handleMovement();
-    }, SPEED);
-
-    if (flipCoin()) {
-      x = 14;
-      direction = "right";
-    } else {
-      x = 13;
-      direction = "left";
-    }
+    flipCoin() ? (direction = "right") : (direction = "left");
   });
-
-  onDestroy(() => {
-    if (intervalId) clearInterval(intervalId);
-  });
-
-  $: {
-    if (x && y) {
-      updateBaddiesMap({ id, x, y });
-    }
-  }
 </script>
 
 <div

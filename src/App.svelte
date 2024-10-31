@@ -1,43 +1,29 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gameBoard, initGameBoard } from "../gameboard";
-  import { baddiesMapStore, game_is_running } from "./GameStore";
-  import { CELL_SIZE } from "../ConfigSettings";
+  import {
+    baddiesMapStore,
+    game_is_running,
+    incrementBadGuyInterval,
+    incrementMainInterval,
+    mainIntervalStore,
+  } from "./GameStore";
+  import {
+    BAD_GUY_INTERVAL,
+    CELL_SIZE,
+    MAIN_INTERVAL,
+  } from "../ConfigSettings";
   import BadGuyComponent from "./BadGuyComponent.svelte";
   import uniqid from "uniqid";
   import { updateBaddiesMap } from "./GameStore";
-  import GoodGuyComponent from "./GoodGuyComponent.svelte";
-  import type { GameBoard } from "../gameboard";
+  import { flipCoin } from "./utils/flipCoin";
+  import GoodGuy2 from "./GoodGuy2.svelte";
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
-  let initializedGameBoard: GameBoard | null = null;
-
-  function renderLevelMap() {
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let x = 0; x < gameBoard.length; x++) {
-      for (let y = 0; y < gameBoard[x].length; y++) {
-        const barrier = gameBoard[x][y];
-        if (x >= 11 && x <= 16 && y >= 15 && y <= 17) {
-          continue; // Skip drawing for points within the bullpen
-        }
-        if ((x === 13 || x === 14) && y === 18) {
-          continue;
-        }
-        if (barrier) {
-          ctx.beginPath();
-          ctx.rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-          ctx.fillStyle = "black";
-          ctx.fill();
-          ctx.strokeStyle = "rgb(162, 112, 255)";
-          ctx.stroke();
-        }
-      }
-    }
-  }
+  let initializedGameBoard = initGameBoard();
+  let mainInterval: number | null;
+  let badGuyInterval: number | null;
 
   onMount(() => {
     canvas.width = gameBoard.length * CELL_SIZE;
@@ -50,16 +36,71 @@
     ctx.translate(0, canvas.height);
     ctx.scale(1, -1); //<--- flip canvas upside down
     renderLevelMap();
-    initializedGameBoard = initGameBoard();
+
+    // checks colision and also move the pacman
+    mainInterval = setInterval(() => {
+      incrementMainInterval();
+    }, MAIN_INTERVAL);
+
+    // updates bad guy postiion in global state and move the bad guy
+    badGuyInterval = setInterval(() => {
+      incrementBadGuyInterval();
+    }, BAD_GUY_INTERVAL);
   });
 
-  function startGame() {
+  function renderLevelMap() {
+    let count = 0;
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const board = initializedGameBoard;
+    if (!board) {
+      console.error("game board never initialized properly");
+      return;
+    }
+
+    for (let x = 0; x < board.length; x++) {
+      for (let y = 0; y < board[x].length; y++) {
+        const barrier = board[x][y].barrier;
+        const coin = board[x][y].coin;
+
+        if (x >= 11 && x <= 16 && y >= 15 && y <= 17) {
+          continue; // Skip drawing for points within the bullpen
+        }
+        if ((x === 13 || x === 14) && y === 18) {
+          continue; // Skip drawing where the bullpen opens up
+        }
+        if (barrier) {
+          ctx.beginPath();
+          ctx.rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          ctx.fillStyle = "black";
+          ctx.fill();
+          ctx.strokeStyle = "rgb(162, 112, 255)";
+          ctx.stroke();
+        }
+        if (coin) {
+          ctx.beginPath();
+          const centerX = x * CELL_SIZE + CELL_SIZE / 2;
+          const centerY = y * CELL_SIZE + CELL_SIZE / 2;
+          ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          count++;
+        }
+      }
+    }
+    if (count === 0) {
+      console.warn("you win!");
+    }
+  }
+
+  function addBaddy() {
     game_is_running.set(true);
     const newId = uniqid();
 
     updateBaddiesMap({
       id: newId,
-      x: 0, //values will be overwritten when baddy component mounts
+      x: flipCoin() ? 14 : 13,
       y: 0,
     });
   }
@@ -68,6 +109,8 @@
     game_is_running.set(false);
     console.log("game over");
     baddiesMapStore.set({});
+    if (mainInterval) clearInterval(mainInterval);
+    mainIntervalStore.set(0);
   }
 </script>
 
@@ -78,7 +121,7 @@
 
     <!-- ---debugging container--- -->
     <div class="top-button-row">
-      <button on:click={startGame}> Add Enemy </button>
+      <button on:click={addBaddy}> Add Enemy </button>
       <button on:click={stopGame}> Clear </button>
 
       <div class="stats">
@@ -94,7 +137,8 @@
         {#each Object.values($baddiesMapStore) as baddy (baddy.id)}
           <BadGuyComponent id={baddy.id} gameBoard={initializedGameBoard}/>
         {/each}
-        <GoodGuyComponent gameBoard={initializedGameBoard}/>
+        <!-- <GoodGuyComponent gameBoard={initializedGameBoard}/> -->
+        <GoodGuy2 gameBoard={initializedGameBoard} {renderLevelMap}/>
       {/if}
     </div>
   </div>
