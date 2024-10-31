@@ -4,7 +4,7 @@
   import {
     baddiesMapStore,
     game_is_running,
-    incremembetBadGuyInterval,
+    incrementBadGuyInterval,
     incrementMainInterval,
     mainIntervalStore,
   } from "./GameStore";
@@ -16,17 +16,40 @@
   import BadGuyComponent from "./BadGuyComponent.svelte";
   import uniqid from "uniqid";
   import { updateBaddiesMap } from "./GameStore";
-  import type { GameBoard } from "../gameboard";
   import { flipCoin } from "./utils/flipCoin";
   import GoodGuy2 from "./GoodGuy2.svelte";
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
-  let initializedGameBoard: GameBoard | null = null;
+  let initializedGameBoard = initGameBoard();
   let mainInterval: number | null;
   let badGuyInterval: number | null;
 
+  onMount(() => {
+    canvas.width = gameBoard.length * CELL_SIZE;
+    canvas.height = gameBoard[0].length * CELL_SIZE;
+
+    ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.translate(0, canvas.height);
+    ctx.scale(1, -1); //<--- flip canvas upside down
+    renderLevelMap();
+
+    // checks colision and also move the pacman
+    mainInterval = setInterval(() => {
+      incrementMainInterval();
+    }, MAIN_INTERVAL);
+
+    // updates bad guy postiion in global state and move the bad guy
+    badGuyInterval = setInterval(() => {
+      incrementBadGuyInterval();
+    }, BAD_GUY_INTERVAL);
+  });
+
   function renderLevelMap() {
+    let count = 0;
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -56,35 +79,20 @@
           ctx.stroke();
         }
         if (coin) {
-          //TODO: render little coins
+          ctx.beginPath();
+          const centerX = x * CELL_SIZE + CELL_SIZE / 2;
+          const centerY = y * CELL_SIZE + CELL_SIZE / 2;
+          ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          count++;
         }
       }
     }
+    if (count === 0) {
+      console.warn("you win!");
+    }
   }
-
-  onMount(() => {
-    canvas.width = gameBoard.length * CELL_SIZE;
-    canvas.height = gameBoard[0].length * CELL_SIZE;
-
-    ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.save();
-    ctx.translate(0, canvas.height);
-    ctx.scale(1, -1); //<--- flip canvas upside down
-    renderLevelMap();
-    initializedGameBoard = initGameBoard();
-
-    // checks colision and also move the pacman
-    mainInterval = setInterval(() => {
-      incrementMainInterval();
-    }, MAIN_INTERVAL);
-
-    // updates bad guy postiion in global state and move the bad guy
-    badGuyInterval = setInterval(() => {
-      incremembetBadGuyInterval();
-    }, BAD_GUY_INTERVAL);
-  });
 
   function addBaddy() {
     game_is_running.set(true);
@@ -130,7 +138,7 @@
           <BadGuyComponent id={baddy.id} gameBoard={initializedGameBoard}/>
         {/each}
         <!-- <GoodGuyComponent gameBoard={initializedGameBoard}/> -->
-        <GoodGuy2 gameBoard={initializedGameBoard}/>
+        <GoodGuy2 gameBoard={initializedGameBoard} {renderLevelMap}/>
       {/if}
     </div>
   </div>

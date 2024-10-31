@@ -7,10 +7,12 @@
   import { checkForBadGuyCollision } from "./checkForBadGuyCollision";
 
   export let gameBoard: GameBoard;
+  export let renderLevelMap: () => void;
 
   let canTransition = true; // toggles CSS movement
   let x = 13; // start position of PacMan
   let y = 7; // start position of Pacman
+  let amountEaten = 0; // coins eaten by pacman
 
   let movementInt: number | null;
 
@@ -39,6 +41,7 @@
       // Wrapping around the game board
       if (x === 0) {
         canTransition = false;
+        checkForCoinEat(0, y);
         x = 27;
         setTimeout(() => {
           canTransition = true;
@@ -56,12 +59,14 @@
       // Wrapping around the game board
       if (x === 27) {
         canTransition = false;
+        checkForCoinEat(0, y);
         x = 0;
         setTimeout(() => {
           canTransition = true;
         }, PACMAN_SPEED / 3);
+      } else {
+        x = x + 1;
       }
-      x = x + 1;
     }, PACMAN_SPEED);
   }
 
@@ -114,6 +119,22 @@
     }
   }
 
+  function checkForCoinEat(x: number, y: number) {
+    if (gameBoard[x][y].coin) {
+      gameBoard[x][y].coin = false;
+      amountEaten = amountEaten + 1;
+      setTimeout(() => {
+        renderLevelMap();
+      }, PACMAN_SPEED / 2);
+    }
+  }
+
+  $: {
+    if (x && y) {
+      checkForCoinEat(x, y);
+    }
+  }
+
   $: {
     // checks for collision with wall when moving
     if (direction && checkForBarrierCollision(x, y, direction)) {
@@ -122,10 +143,12 @@
     }
   }
 
-  // checks for collision with bad guy on global interval
+  // checks for collision with bad guy //timeout prevents race condition
   $: {
     if ($mainIntervalStore) {
-      checkForBadGuyCollision(x, y);
+      setTimeout(() => {
+        checkForBadGuyCollision(x, y);
+      }, 2);
     }
   }
 

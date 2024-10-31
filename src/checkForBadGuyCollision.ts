@@ -6,7 +6,7 @@ export function checkForBadGuyCollision(x: number, y: number) {
   Object.entries(baddiesMap).forEach(([id, value]) => {
     if (value.x === x && value.y === y) {
       console.clear()
-      console.warn("Baddy Collision")
+      console.warn("Collision!")
     }
   })
 }

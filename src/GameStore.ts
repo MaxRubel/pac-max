@@ -30,6 +30,6 @@ export function incrementMainInterval() {
   mainIntervalStore.update((preVal) => (preVal + 1))
 }
 
-export function incremembetBadGuyInterval() {
+export function incrementBadGuyInterval() {
   badGuyInterValStore.update((preVal) => preVal + 1)
 }
